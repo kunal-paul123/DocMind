@@ -1,8 +1,8 @@
-# ⬡ DocMind — AI Research Assistant
+# DocMind — AI Research Assistant
 
-> Chat with your PDF documents using the power of Gemini AI and Retrieval-Augmented Generation (RAG).
+> Chat with your PDF documents using the power of Gemini AI and RAG
 
-DocMind is a full-stack AI research assistant that lets users upload PDF documents and interact with them through a natural language chat interface. Answers are grounded in the actual content of your documents — with exact source citations included.
+DocMind is a full-stack AI research assistant that lets users upload PDF documents and chat with them. Answers are grounded in the actual content of your documents — with exact source citations included.
 
 ---
 
@@ -11,10 +11,8 @@ DocMind is a full-stack AI research assistant that lets users upload PDF documen
 - 🔐 **Google OAuth Authentication** — Secure, one-click sign-in with Google
 - 📄 **PDF Upload & Processing** — Drag & drop upload with real-time background processing status
 - 🧠 **RAG Pipeline** — Semantic search over your documents using Gemini vector embeddings
-- 💬 **Streaming Chat** — Real-time token streaming via Server-Sent Events (SSE)
 - 📎 **Source Citations** — Every AI answer includes the exact filename and page number
 - 📚 **Multi-Document Support** — Select and query across multiple documents simultaneously
-- 🌙 **Dark Theme UI** — Premium dark mode interface built with React + Vite
 
 ---
 
@@ -50,7 +48,7 @@ DocMind is a full-stack AI research assistant that lets users upload PDF documen
 ### AI / ML
 | Technology | Purpose |
 |---|---|
-| Gemini API `gemini-1.5-flash` | LLM for chat response generation |
+| Gemini API `gemini-2.5-flash` | LLM for chat response generation |
 | Gemini Embedding API `text-embedding-004` | Vector embeddings for documents & queries |
 | LangChain | Document chunking & retrieval orchestration |
 | ChromaDB | Local, self-hostable vector store |
@@ -206,7 +204,7 @@ pip install -r requirements.txt
 #### Create `backend/.env`
 
 ```env
-DATABASE_URL=postgresql://user:password@ep-xxxxx.us-east-1.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=your_database_url
 GEMINI_API_KEY=your_gemini_api_key_here
 SECRET_KEY=your_generated_secret_key_here
 
@@ -325,7 +323,7 @@ User Query
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/health` | No | Health check |
+| `GET` | `/` | No | Health check |
 | `GET` | `/auth/google` | No | Redirect to Google login |
 | `GET` | `/auth/google/callback` | No | Google OAuth callback, returns JWT |
 | `GET` | `/auth/me` | Yes | Get current logged-in user |
@@ -359,67 +357,6 @@ User Query
 | `file_path` | String | Path inside `uploads/` |
 | `status` | Enum | `PENDING` → `PROCESSING` → `READY` / `FAILED` |
 | `created_at` | DateTime | Upload timestamp |
-
----
-
-## 🗺️ Development Roadmap
-
-### Phase 1 — Project Setup & Foundation ✅
-- [x] Monorepo folder structure (`frontend/` + `backend/`)
-- [x] Python venv + all backend packages installed
-- [x] FastAPI app with health check endpoint
-- [x] React + Vite frontend scaffolded
-- [x] Neon DB account + connection string configured
-- [x] `.env` files set up for backend
-- [x] CORS configured in FastAPI
-
-### Phase 2 — Neon DB Setup & Google OAuth Auth ✅
-- [x] `database.py` with SQLAlchemy + Neon connection
-- [x] `User` SQLAlchemy model with UUID primary key
-- [x] Alembic initialized and configured
-- [x] Migration run — `users` table created in Neon DB
-- [x] Google OAuth routes (`/auth/google`, `/auth/google/callback`)
-- [x] JWT creation + `get_current_user` dependency
-- [x] `AuthCallback.jsx` — stores token, redirects to dashboard
-- [x] Protected route wrapper in React Router
-
-### Phase 3 — Document Upload & Processing Pipeline
-- [ ] `Document` SQLAlchemy model
-- [ ] `POST /documents/upload` endpoint (multipart)
-- [ ] Background task: PDF parse → chunk → embed → store in ChromaDB
-- [ ] `pdf_parser.py` — PyMuPDF text extraction per page
-- [ ] `chunker.py` — `RecursiveCharacterTextSplitter` (chunk_size=1000, overlap=200)
-- [ ] `gemini_client.py` — `text-embedding-004` embeddings
-- [ ] `chroma_client.py` — ChromaDB upsert with metadata
-- [ ] Document status polling (`PENDING → PROCESSING → READY`)
-- [ ] `GET /documents` + `DELETE /documents/{id}` endpoints
-- [ ] `DocumentUpload` component (drag & drop)
-- [ ] `DocumentCard` with real-time status badge
-
-### Phase 4 — RAG Chat Pipeline
-- [ ] `POST /chat` endpoint (`{ query, document_ids[] }`)
-- [ ] `rag_service.py` — embed query → ChromaDB retrieval → context assembly
-- [ ] Gemini 1.5 Flash streaming via `generate_content_stream`
-- [ ] FastAPI `StreamingResponse` with Server-Sent Events
-- [ ] Source citations appended to each response
-- [ ] `ChatWindow` with react-markdown rendering
-- [ ] `useChat` hook consuming the SSE stream
-- [ ] `SourceCitation` cards below each AI response
-
-### Phase 5 — Multi-Document Support & UX Polish
-- [ ] Document selection checkboxes (query across multiple docs)
-- [ ] Conversation history (persist chat messages)
-- [ ] "New Chat" button to reset context
-- [ ] Copy-to-clipboard on code blocks
-- [ ] Loading skeletons + error toasts (sonner)
-- [ ] Fully responsive layout (mobile sidebar drawer)
-
-### Phase 6 — Testing & Hardening
-- [ ] pytest tests for RAG service + document processing
-- [ ] Rate limiting via `slowapi` on `/chat`
-- [ ] File type validation (PDF only) + 10MB size limit
-- [ ] Error handling + user-friendly error messages
-- [ ] `.gitignore` audit (`uploads/`, `chroma_db/`, `.env`)
 
 ---
 
@@ -464,47 +401,3 @@ slowapi
   }
 }
 ```
-
----
-
-## ⚠️ Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | ✅ | Neon DB PostgreSQL connection string |
-| `GEMINI_API_KEY` | ✅ | Google Gemini API key |
-| `SECRET_KEY` | ✅ | JWT signing secret (32+ char random hex) |
-| `GOOGLE_CLIENT_ID` | ✅ | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | ✅ | Google OAuth Client Secret |
-| `GOOGLE_REDIRECT_URI` | ✅ | Must match Google Cloud Console setting |
-| `FRONTEND_URL` | ✅ | Frontend origin (for post-auth redirect) |
-| `ALGORITHM` | ❌ | JWT algorithm (default: `HS256`) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | ❌ | Token expiry in minutes (default: `60`) |
-
----
-
-## ✅ Definition of Done
-
-- [ ] User can sign in with Google and token persists across page refresh
-- [ ] PDF uploads are processed and status updates in real time
-- [ ] Chat returns streamed responses with visible typing effect
-- [ ] Source citations (filename + page number) appear below each answer
-- [ ] Querying across multiple selected documents works correctly
-- [ ] Deleting a document removes it from both Neon DB and ChromaDB
-- [ ] Neon DB dashboard shows correct user and document records
-- [ ] Alembic migrations run cleanly (`alembic upgrade head`)
-- [ ] Rate limiting prevents abuse on the `/chat` endpoint
-
----
-
-## 🔒 Security Notes
-
-- `.env` is gitignored — **never commit it**
-- JWT tokens stored in `localStorage` on the frontend
-- All protected routes require a valid `Bearer` token in the `Authorization` header
-- Neon DB uses `sslmode=require` for encrypted connections
-- File uploads validated for PDF type + 10MB size limit
-
----
-
-Built with ❤️ using FastAPI, React, Gemini AI, and LangChain.
