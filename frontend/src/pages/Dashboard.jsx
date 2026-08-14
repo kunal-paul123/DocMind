@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './Dashboard.css';
+import { removeToken } from '../utils/auth';
+import { Link, useNavigate } from 'react-router-dom';
 
 // ── Mock Data ─────────────────────────────────────────────
 const MOCK_DOCS = [
@@ -126,14 +128,23 @@ export default function Dashboard() {
 
   const readyDocs = docs.filter(d => d.status === 'ready');
 
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    removeToken();
+    navigate('/', { replace: true });
+  }
+
   return (
     <div className="dashboard">
       {/* ── Sidebar ── */}
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
         {/* Logo */}
         <div className="sidebar-logo">
-          <span className="logo-icon">⬡</span>
-          {sidebarOpen && <span className="logo-text">DocMind</span>}
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+            <span className="logo-icon">⬡</span>
+            {sidebarOpen && <span className="logo-text">DocMind</span>}
+          </Link>
           <button
             id="toggle-sidebar-btn"
             className="btn btn-ghost sidebar-toggle"
@@ -141,7 +152,7 @@ export default function Dashboard() {
             title="Toggle sidebar"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d={sidebarOpen ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'}/>
+              <path d={sidebarOpen ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'} />
             </svg>
           </button>
         </div>
@@ -217,7 +228,7 @@ export default function Dashboard() {
                       title="Delete document"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M18 6L6 18M6 6l12 12"/>
+                        <path d="M18 6L6 18M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
@@ -244,14 +255,13 @@ export default function Dashboard() {
                 <span className="user-email">{MOCK_USER.email}</span>
               </div>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
-                <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+                <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
               </svg>
             </>
           )}
           {userMenuOpen && sidebarOpen && (
             <div className="user-menu">
-              <button className="user-menu-item">⚙️ Settings</button>
-              <button className="user-menu-item user-menu-logout">🚪 Sign Out</button>
+              <button onClick={handleLogout} className="user-menu-item user-menu-logout">🚪 Sign Out</button>
             </div>
           )}
         </div>
@@ -364,7 +374,7 @@ export default function Dashboard() {
                 <span className="spin" style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }} />
               ) : (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                  <path d="M12 19V5M5 12l7-7 7 7" />
                 </svg>
               )}
             </button>

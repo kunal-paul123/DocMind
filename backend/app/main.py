@@ -12,6 +12,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+
 @app.get("/")
 def health_check():
     return {"status" : "ok", "message": "RAG Research Assistant API is running"}

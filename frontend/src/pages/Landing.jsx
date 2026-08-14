@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import './Landing.css';
+import { isAuthenticated } from '../utils/auth';
 
 const features = [
   {
@@ -35,9 +36,13 @@ export default function Landing() {
             <span className="logo-text">DocMind</span>
           </div>
           <div className="landing-nav-links">
-            <Link to="/login" className="btn btn-outline" style={{ padding: '8px 20px' }}>
-              Sign In
-            </Link>
+            {isAuthenticated() ? (
+              <Link to="/dashboard" className="btn btn-primary" style={{ padding: '8px 20px' }}>
+                Go to Dashboard →
+              </Link>) : (<Link to="/login" className="btn btn-outline" style={{ padding: '8px 20px' }}>
+                Sign In
+              </Link>)
+            }
           </div>
         </div>
       </nav>
@@ -64,11 +69,13 @@ export default function Landing() {
             with source citations — all in a private, secure environment.
           </p>
           <div className="hero-cta">
-            <Link to="/login" className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '15px' }}>
-              Get Started Free
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
+            <Link to={isAuthenticated() ? "/dashboard" : "/login"} className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '15px' }}>
+              {isAuthenticated() ? "Go to Dashboard" : "Get Started Free"}
+              {!isAuthenticated() && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              )}
             </Link>
             <a href="#features" className="btn btn-outline" style={{ padding: '14px 32px', fontSize: '15px' }}>
               See How It Works
@@ -135,8 +142,8 @@ export default function Landing() {
         <div className="cta-inner">
           <h2>Ready to unlock your documents?</h2>
           <p>Join researchers, students, and professionals using DocMind.</p>
-          <Link to="/login" className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '15px' }}>
-            Start for Free →
+          <Link to={isAuthenticated() ? "/dashboard" : "/login"} className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '15px' }}>
+            {isAuthenticated() ? "Go to Dashboard ->" : "Start for Free"}
           </Link>
         </div>
       </section>

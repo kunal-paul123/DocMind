@@ -19,11 +19,11 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 @router.get("/google")
 def google_login():
     params = (
-        f"?client_id={settings.GOOGLE_CLIENT_ID}&"
-        f"&redirect_uri={settings.GOOGLE_REDIRECT_URL}&"
-        f"&response_type=code&"
-        f"&scope=openid email profile&"
-        f"&access_type=offline&"
+        f"?client_id={settings.GOOGLE_CLIENT_ID}"
+        f"&redirect_uri={settings.GOOGLE_REDIRECT_URI}"
+        f"&response_type=code"
+        f"&scope=openid email profile"
+        f"&access_type=offline"
     )
 
     return RedirectResponse(url=GOOGLE_AUTH_URL + params)
@@ -75,4 +75,6 @@ def get_me(
     current_user:User = Depends(get_current_user)
 ):
     return current_user
+
+
 

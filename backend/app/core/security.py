@@ -18,7 +18,7 @@ def create_access_token(data: dict) -> str:
     return encoded_jwt
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_schema),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer),
     db: Session = Depends(get_db)
 ) -> User:
     token = credentials.credentials
