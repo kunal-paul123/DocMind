@@ -130,6 +130,7 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
 
+  // logout
   const handleLogout = () => {
     removeToken();
     navigate('/', { replace: true });
