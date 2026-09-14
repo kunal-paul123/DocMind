@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './Dashboard.css';
 import { removeToken } from '../utils/auth';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDocuments } from '../hooks/useDocuments';
 
 // ── Mock Data ─────────────────────────────────────────────
 const MOCK_DOCS = [
@@ -34,7 +35,6 @@ function renderMarkdown(text) {
 
 // ── Dashboard ─────────────────────────────────────────────
 export default function Dashboard() {
-  const [docs, setDocs] = useState(MOCK_DOCS);
   const [selectedDocs, setSelectedDocs] = useState([1]);
   const [messages, setMessages] = useState(WELCOME_MESSAGES);
   const [input, setInput] = useState('');
@@ -42,9 +42,16 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  const { documents, loading, uploading, error, upload, remove, refetch } = useDocuments();
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) await upload(file);
+  }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -81,9 +88,9 @@ export default function Dashboard() {
   };
 
   // Handle delete
-  const handleDelete = (id) => {
-    setDocs(prev => prev.filter(d => d.id !== id));
-    setSelectedDocs(prev => prev.filter(d => d !== id));
+  const handleDelete = async (docId) => {
+    await remove(docId)
+    setSelectedDocs(prev => prev.filter(d => d !== docId));
   };
 
   // Handle send
@@ -126,7 +133,7 @@ export default function Dashboard() {
     }
   };
 
-  const readyDocs = docs.filter(d => d.status === 'ready');
+  // const readyDocs = documents.filter(d => d.status === 'ready');
 
   const navigate = useNavigate();
 
@@ -140,7 +147,6 @@ export default function Dashboard() {
     <div className="dashboard">
       {/* ── Sidebar ── */}
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-        {/* Logo */}
         <div className="sidebar-logo">
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
             <span className="logo-icon">⬡</span>
@@ -164,21 +170,27 @@ export default function Dashboard() {
             id="upload-area"
             className={`upload-area ${dragOver ? 'drag-over' : ''}`}
             onClick={() => fileInputRef.current?.click()}
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+            // onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            // onDragLeave={() => setDragOver(false)}
+            // onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+            disabled={uploading}
           >
-            <div className="upload-icon">📄</div>
-            <p className="upload-text">Drop PDFs here</p>
-            <p className="upload-sub">or click to browse</p>
+            {uploading ? "Uploading..." : (
+              <>
+                <div className="upload-icon">📄</div>
+                <p className="upload-text">Drop PDFs here</p>
+              </>
+            )}
             <input
               ref={fileInputRef}
               type="file"
               accept=".pdf"
               multiple
               style={{ display: 'none' }}
-              onChange={e => handleFiles(e.target.files)}
+              onChange={handleFileChange}
             />
+
+            {error && <p style={{ color: '#ff6b6b', margin: '0 0 8px' }}>❌ {error}</p>}
           </div>
         )}
 
@@ -190,7 +202,7 @@ export default function Dashboard() {
             title="Upload PDF"
           >
             📄
-            <input ref={fileInputRef} type="file" accept=".pdf" multiple style={{ display: 'none' }} onChange={e => handleFiles(e.target.files)} />
+            <input ref={fileInputRef} type="file" accept=".pdf" multiple style={{ display: 'none' }} onChange={handleFileChange} />
           </button>
         )}
 
@@ -199,30 +211,31 @@ export default function Dashboard() {
           <div className="sidebar-section">
             <div className="sidebar-section-header">
               <span className="sidebar-section-title">Documents</span>
-              <span className="sidebar-doc-count">{docs.length}</span>
+              <span className="sidebar-doc-count">{documents.length}</span>
             </div>
             <div className="doc-list">
-              {docs.length === 0 && (
+              {loading && <p>Loading...</p>}
+              {!loading && documents.length === 0 && (
                 <p className="doc-empty">No documents yet. Upload a PDF to get started.</p>
               )}
-              {docs.map(doc => (
+              {documents.map(doc => (
                 <div
                   key={doc.id}
                   id={`doc-${doc.id}`}
-                  className={`doc-item ${selectedDocs.includes(doc.id) && doc.status === 'ready' ? 'doc-item-selected' : ''}`}
+                  className={`doc-item ${selectedDocs.includes(doc.id) && doc.status === 'READY' ? 'doc-item-selected' : ''}`}
                 >
                   <div className="doc-item-top">
-                    {doc.status === 'ready' && (
-                      <input
-                        type="checkbox"
-                        className="doc-checkbox"
-                        checked={selectedDocs.includes(doc.id)}
-                        onChange={() => toggleDoc(doc.id)}
-                        title="Select for chat"
-                      />
-                    )}
+                    <input
+                      type="checkbox"
+                      className="doc-checkbox"
+                      checked={selectedDocs.includes(doc.id)}
+                      disabled={doc.status !== 'READY'}
+                      onChange={() => toggleDoc(doc.id)}
+                      title={doc.status === 'READY' ? 'Select for chat' : 'Document is not ready yet'}
+                    />
+
                     <span className="doc-icon">📄</span>
-                    <span className="doc-name" title={doc.name}>{doc.name}</span>
+                    <span className="doc-name" title={doc.filename}>{doc.filename}</span>
                     <button
                       className="btn btn-ghost doc-delete-btn"
                       onClick={() => handleDelete(doc.id)}
@@ -235,10 +248,10 @@ export default function Dashboard() {
                   </div>
                   <div className="doc-item-meta">
                     <span className={`badge ${statusColors[doc.status]}`}>
-                      {doc.status === 'processing' && <span className="spin" style={{ display: 'inline-block', width: 8, height: 8, border: '1.5px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%' }} />}
-                      {statusLabels[doc.status]}
+                      {doc.status === 'PROCESSING' && <span className="spin" style={{ display: 'inline-block', width: 8, height: 8, border: '1.5px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%' }} />}
+                      {/* {statusLabels[doc.status]} */}
                     </span>
-                    <span className="doc-meta-text">{doc.size}{doc.pages ? ` · ${doc.pages}p` : ''}</span>
+                    {/* <span className="doc-meta-text">{doc.size}{doc.pages ? ` · ${doc.pages}p` : ''}</span> */}
                   </div>
                 </div>
               ))}
