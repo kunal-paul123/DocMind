@@ -8,9 +8,6 @@ export default function AuthCallback() {
         const params = new URLSearchParams(window.location.search);
         const token = params.get("token");
 
-        console.log(params);
-        console.log(token);
-
         if (token) {
             localStorage.setItem('access_token', token);
             navigate("/dashboard", { replace: true });
