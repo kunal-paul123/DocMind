@@ -1,3 +1,5 @@
+from app.core.chroma_client import delete_document_vectors
+from app.services.document_service import process_document
 from fastapi import responses
 from certifi import contents
 from httpx import _status_codes
@@ -11,6 +13,7 @@ from app.models.user import User
 from app.models.document import Document, DocumentStatus
 from app.schemas.document import DocumentOut
 from app.core.security import get_current_user
+from app.services.document_service import process_document
 
 router = APIRouter(prefix="/documents",tags=["documents"])
 
@@ -25,7 +28,7 @@ async def upload_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if not file.filename.endswith(".pdf"):
+    if not (file.filename or "").endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
     # save the file to disk
@@ -46,7 +49,7 @@ async def upload_document(
     db.commit()
     db.refresh(doc)
 
-    # TODO Phase 3: background_tasks.add_task(process_document, str(doc.id), file_path)
+    background_tasks.add_task(process_document, str(doc.id), file_path)
 
     return doc
 
@@ -86,10 +89,11 @@ def delete_document(
         raise HTTPException(status_code=404, detail = "Document not found")
 
     # Delete the file from disk
-    if os.path.exists(str(doc.file_path)):
-        os.remove(str(doc.file_path))
+    if os.path.exists(doc.file_path):
+        os.remove(doc.file_path)
     
     # TODO Phase 3: delete vectors from ChromaDB
+    delete_document_vectors(str(doc.id))
 
     db.delete(doc)
     db.commit()

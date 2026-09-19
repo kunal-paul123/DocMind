@@ -1,12 +1,11 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from app.config import settings
 
-genai.configure(
+# Create a single client instance reused across all requests
+client = genai.Client(
     api_key=settings.GEMINI_API_KEY
 )
-
-# a single chat model instance reused across all requests
-chat_model = genai.GenerativeModel("gemini-2.5-flash")
 
 def get_embeddings(text: str) -> list[float]:
     """
@@ -17,15 +16,22 @@ def get_embeddings(text: str) -> list[float]:
     """
     print(text)
 
-    result = genai.embed_content(
+    result = client.models.embed_content(
         model="gemini-embedding-001",
-        content=text,
-        task_type="retrieval_document"
+        contents=text,
+        config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
     )
 
     print(result)
 
-    return result['embedding']
+    if not result.embeddings:
+        raise RuntimeError(f"Gemini embedding API returned no embeddings. Full result: {result}")
+
+    values = result.embeddings[0].values
+    if values is None:
+        raise RuntimeError(f"Gemini embedding returned None values. Full result: {result}")
+
+    return values
 
 def get_query_embeddings(text:str) -> list[float]:
     """
@@ -36,15 +42,22 @@ def get_query_embeddings(text:str) -> list[float]:
 
     print(text)
 
-    result = genai.embed_content(
+    result = client.models.embed_content(
         model="gemini-embedding-001",
-        content=text,
-        task_type="retrieval_query"
+        contents=text,
+        config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
     )
 
     print(result)
 
-    return result['embedding']
+    if not result.embeddings:
+        raise RuntimeError(f"Gemini embedding API returned no embeddings. Full result: {result}")
+
+    values = result.embeddings[0].values
+    if values is None:
+        raise RuntimeError(f"Gemini embedding returned None values. Full result: {result}")
+
+    return values
 
 def stream_chat(prompt: str):
     """
@@ -52,7 +65,10 @@ def stream_chat(prompt: str):
     Instead of waiting for the full answer, it yields text tokens one by one
     — this is what makes the AI response appear word-by-word on the frontend.
     """
-    response = chat_model.generate_content(prompt, stream=True)
+    response = client.models.generate_content_stream(
+        model="gemini-3.6-flash",
+        contents=prompt,
+    )
 
     print(response)
 
