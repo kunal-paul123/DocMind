@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './Dashboard.css';
-import { removeToken } from '../utils/auth';
+import { getToken, removeToken } from '../utils/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDocuments } from '../hooks/useDocuments';
 
@@ -23,10 +23,11 @@ const WELCOME_MESSAGES = [
 ];
 
 // ── Helpers ───────────────────────────────────────────────
-const statusColors = { ready: 'badge-ready', processing: 'badge-processing', pending: 'badge-pending', failed: 'badge-failed' };
-const statusLabels = { ready: 'Ready', processing: 'Processing...', pending: 'Pending', failed: 'Failed' };
+const statusColors = { READY: 'badge-ready', PROCESSING: 'badge-processing', PENDING: 'badge-pending', FAILED: 'badge-failed', ready: 'badge-ready', processing: 'badge-processing', pending: 'badge-pending', failed: 'badge-failed' };
+const statusLabels = { READY: 'Ready', PROCESSING: 'Processing...', PENDING: 'Pending', FAILED: 'Failed' };
 
 function renderMarkdown(text) {
+  if (!text) return '';
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
@@ -35,27 +36,34 @@ function renderMarkdown(text) {
 
 // ── Dashboard ─────────────────────────────────────────────
 export default function Dashboard() {
-  const [selectedDocs, setSelectedDocs] = useState([1]);
+  const [selectedDocs, setSelectedDocs] = useState([]);
   const [messages, setMessages] = useState(WELCOME_MESSAGES);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [docToDelete, setDocToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const { documents, loading, uploading, error, upload, remove, refetch } = useDocuments();
-  const fileInputRef = useRef(null);
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (file) await upload(file);
-  }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      await upload(file);
+      e.target.value = "";
+    }
+  }
 
   // Toggle document selection
   const toggleDoc = (id) => {
@@ -64,84 +72,157 @@ export default function Dashboard() {
     );
   };
 
-  // Handle file upload
-  const handleFiles = (files) => {
-    Array.from(files).forEach(file => {
-      if (!file.name.endsWith('.pdf')) return;
-      const newDoc = {
-        id: Date.now() + Math.random(),
-        name: file.name,
-        status: 'pending',
-        pages: null,
-        size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-        uploadedAt: 'Just now',
-      };
-      setDocs(prev => [newDoc, ...prev]);
-      // Simulate processing
-      setTimeout(() => {
-        setDocs(prev => prev.map(d => d.id === newDoc.id ? { ...d, status: 'processing' } : d));
-        setTimeout(() => {
-          setDocs(prev => prev.map(d => d.id === newDoc.id ? { ...d, status: 'ready', pages: Math.floor(Math.random() * 50 + 5) } : d));
-        }, 3000);
-      }, 1000);
-    });
-  };
-
   // Handle delete
   const handleDelete = async (docId) => {
     await remove(docId)
     setSelectedDocs(prev => prev.filter(d => d !== docId));
   };
 
-  // Handle send
+  // backend chat stream (SSE via Fetch)
   const handleSend = async () => {
     const query = input.trim();
-    if (!query || isStreaming) return;
-    setInput('');
+    if (!query || isStreaming || selectedDocs.length == 0) return;
+    setInput("");
 
-    const userMsg = { id: Date.now(), role: 'user', content: query, citations: null };
-    setMessages(prev => [...prev, userMsg]);
+    // add user message
+    const userMsg = {
+      id: Date.now(),
+      role: 'user',
+      content: query,
+      citations: null
+    };
+
+    // Prepare placeholder for assistant streaming response
+    const aiId = Date.now() + 1;
+    const aiMsg = { id: aiId, role: "assistant", content: '', citations: null, streaming: true };
+
+    setMessages(prev => [...prev, userMsg, aiMsg]);
     setIsStreaming(true);
 
-    // Simulate streaming AI response
-    const aiId = Date.now() + 1;
-    setMessages(prev => [...prev, { id: aiId, role: 'assistant', content: '', citations: null, streaming: true }]);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          query: query,
+          document_ids: selectedDocs,
+        }),
+      });
 
-    const mockResponse = `Based on the selected documents, here is what I found:\n\nThe paper discusses **transformer architectures** and their application to sequence modeling tasks. The key insight is the use of self-attention mechanisms that allow the model to weigh the relevance of different parts of the input sequence.\n\nSpecifically, the model uses **multi-head attention** with \`h = 8\` parallel attention layers, enabling it to attend to information from different representation subspaces simultaneously.`;
+      console.log("response: ", response);
 
-    let i = 0;
-    const interval = setInterval(() => {
-      i += 3;
-      const chunk = mockResponse.slice(0, i);
-      setMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: chunk } : m));
-      if (i >= mockResponse.length) {
-        clearInterval(interval);
-        const citations = [
-          { docName: 'attention-is-all-you-need.pdf', page: 3, section: 'Section 3.2 — Attention' },
-          { docName: 'attention-is-all-you-need.pdf', page: 5, section: 'Section 4 — Experiments' },
-        ];
-        setMessages(prev => prev.map(m => m.id === aiId ? { ...m, streaming: false, citations } : m));
-        setIsStreaming(false);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.log("errorData: ", errorData);
+        throw new Error(errorData.detail || `Server responded with ${response.status}`);
       }
-    }, 20);
-  };
+
+      // Read Server-Sent Events (SSE) stream from the response body
+      const reader = response.body.getReader();
+      console.log("reader:", reader);
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // decode new chunk and add to buffer
+        buffer += decoder.decode(value, { stream: true });
+        console.log("buffer: ", buffer);
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() // Keep uncompleted line in buffer
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          console.log("trimmed: ", trimmed);
+          if (!trimmed.startsWith('data: ')) continue;
+
+          const jsonStr = trimmed.replace(/^data:\s*/, '');
+          console.log("jsonStr: ", jsonStr);
+          if (!jsonStr) continue;
+
+          try {
+            const data = JSON.parse(jsonStr);
+            console.log("data: ", data);
+
+
+            if (data.type == 'token') {
+              // append token to assistant message
+              setMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: m.content + data.content } : m))
+            }
+            else if (data.type === "sources") {
+              // attach citations
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === aiId ? { ...m, citations: data.content } : m
+                )
+              );
+            }
+            else if (data.type === 'done') {
+              // End of stream
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === aiId ? { ...m, streaming: false } : m
+                )
+              );
+            }
+          } catch (e) {
+            console.error('Error parsing SSE chunk:', e, jsonStr);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("chat error: ", err);
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === aiId
+            ? {
+              ...m,
+              content: `❌ **Error:** ${err.message || 'Failed to get answer from server.'}`,
+              streaming: false
+            }
+            : m
+        )
+      );
+    } finally {
+      setIsStreaming(false);
+      setMessages(prev =>
+        prev.map(m => (m.id === aiId ? { ...m, streaming: false } : m))
+      );
+    }
+  }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
-  };
+  }
 
-  // const readyDocs = documents.filter(d => d.status === 'ready');
+  useEffect(() => {
+    const hasProcessingDocs = documents.some(
+      doc => doc.status === "PROCESSING" || doc.status === "PENDING"
+    );
 
-  const navigate = useNavigate();
+    if (!hasProcessingDocs) return;
+
+    const interval = setInterval(() => {
+      refetch();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [documents, refetch])
 
   // logout
   const handleLogout = () => {
     removeToken();
     navigate('/', { replace: true });
-  }
+  };
 
   return (
     <div className="dashboard">
@@ -214,7 +295,20 @@ export default function Dashboard() {
               <span className="sidebar-doc-count">{documents.length}</span>
             </div>
             <div className="doc-list">
-              {loading && <p>Loading...</p>}
+              {loading && (
+                <div className="doc-skeleton-list">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="doc-skeleton-item">
+                      <div className="doc-skeleton-top">
+                        <div className="doc-skeleton-box" />
+                        <div className="doc-skeleton-bar" style={{ width: `${60 + (i * 12)}%` }} />
+                      </div>
+                      <div className="doc-skeleton-badge" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {!loading && documents.length === 0 && (
                 <p className="doc-empty">No documents yet. Upload a PDF to get started.</p>
               )}
@@ -238,21 +332,38 @@ export default function Dashboard() {
                     <span className="doc-name" title={doc.filename}>{doc.filename}</span>
                     <button
                       className="btn btn-ghost doc-delete-btn"
-                      onClick={() => handleDelete(doc.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDocToDelete(doc);
+                      }}
                       title="Delete document"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M18 6L6 18M6 6l12 12" />
                       </svg>
                     </button>
+
                   </div>
                   <div className="doc-item-meta">
-                    <span className={`badge ${statusColors[doc.status]}`}>
-                      {doc.status === 'PROCESSING' && <span className="spin" style={{ display: 'inline-block', width: 8, height: 8, border: '1.5px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%' }} />}
-                      {/* {statusLabels[doc.status]} */}
+                    <span className={`badge ${statusColors[doc.status] || 'badge-pending'}`}>
+                      {(doc.status === 'PROCESSING' || doc.status === 'PENDING') && (
+                        <span
+                          className="spin"
+                          style={{
+                            display: 'inline-block',
+                            width: 8,
+                            height: 8,
+                            marginRight: 4,
+                            border: '1.5px solid currentColor',
+                            borderTopColor: 'transparent',
+                            borderRadius: '50%'
+                          }}
+                        />
+                      )}
+                      {statusLabels[doc.status] || doc.status}
                     </span>
-                    {/* <span className="doc-meta-text">{doc.size}{doc.pages ? ` · ${doc.pages}p` : ''}</span> */}
                   </div>
+
                 </div>
               ))}
             </div>
@@ -319,22 +430,30 @@ export default function Dashboard() {
               )}
               <div className="msg-bubble-wrap">
                 <div className={`msg-bubble ${msg.role === 'user' ? 'msg-bubble-user' : 'msg-bubble-ai'}`}>
-                  <div
-                    className="msg-content"
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
-                  />
-                  {msg.streaming && (
-                    <span className="cursor-blink">▍</span>
+                  {/* If waiting for first token, show typing dots inside the bubble */}
+                  {msg.role === 'assistant' && msg.streaming && !msg.content ? (
+                    <div className="typing-indicator" style={{ padding: '4px 8px' }}>
+                      <span /><span /><span />
+                    </div>
+                  ) : (
+                    <>
+                      <div
+                        className="msg-content"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                      />
+                      {msg.streaming && <span className="cursor-blink">▍</span>}
+                    </>
                   )}
                 </div>
-                {/* Citations */}
+
+                {/* Citations (Matches backend { filename, page_number } schema) */}
                 {msg.citations && msg.citations.length > 0 && (
                   <div className="citations">
                     <span className="citations-label">📎 Sources</span>
                     {msg.citations.map((c, i) => (
                       <div key={i} className="citation-chip">
                         <span className="citation-icon">📄</span>
-                        <span className="citation-text">{c.docName} — {c.section} (p.{c.page})</span>
+                        <span className="citation-text">{c.filename} — page {c.page_number}</span>
                       </div>
                     ))}
                   </div>
@@ -345,16 +464,6 @@ export default function Dashboard() {
               )}
             </div>
           ))}
-
-          {/* Typing indicator */}
-          {isStreaming && messages[messages.length - 1]?.content === '' && (
-            <div className="message message-assistant fade-in">
-              <div className="msg-avatar msg-avatar-ai">⬡</div>
-              <div className="typing-indicator">
-                <span /><span /><span />
-              </div>
-            </div>
-          )}
           <div ref={chatEndRef} />
         </div>
 
@@ -396,6 +505,51 @@ export default function Dashboard() {
           <p className="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</p>
         </div>
       </main>
+      {/* ── Animated Delete Confirmation Modal ── */}
+      {docToDelete && (
+        <div className="modal-backdrop" onClick={() => !isDeleting && setDocToDelete(null)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-icon-danger">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+              </svg>
+            </div>
+
+            <h3 className="modal-title">Delete Document?</h3>
+            <p className="modal-desc">
+              Are you sure you want to delete <strong className="modal-filename">{docToDelete.filename}</strong>?
+              This will remove its embeddings from the vector database and cannot be undone.
+            </p>
+
+            <div className="modal-actions">
+              <button
+                className="btn btn-outline"
+                onClick={() => setDocToDelete(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                disabled={isDeleting}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await handleDelete(docToDelete.id);
+                    setDocToDelete(null);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+              >
+                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
-  );
+  )
 }
+
