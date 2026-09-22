@@ -22,7 +22,7 @@ export default function Login() {
 
       {/* Logo */}
       <Link to="/" className="auth-logo">
-        <span className="logo-icon">⬡</span>
+        <span className="logo-icon">✦</span>
         <span className="logo-text">DocMind</span>
       </Link>
 
@@ -48,17 +48,8 @@ export default function Login() {
           ) : (
             <GoogleIcon />
           )}
-          {loading ? 'Redirecting...' : 'Continue with Google'}
+          {loading ? 'Sign In...' : 'Continue with Google'}
         </button>
-
-        <div className="divider" style={{ margin: '24px 0' }}>or</div>
-
-        {/* Email placeholder */}
-        <div className="auth-email-section">
-          <p className="auth-email-note">
-            Email & password login coming soon. Currently using Google OAuth only.
-          </p>
-        </div>
 
         <div className="auth-footer-text">
           Don't have an account?{' '}

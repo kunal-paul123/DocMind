@@ -3,21 +3,10 @@ import './Dashboard.css';
 import { getToken, removeToken } from '../utils/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDocuments } from '../hooks/useDocuments';
+import api from '../services/api';
+import { FiEdit } from "react-icons/fi";
 
 // ── Mock Data ─────────────────────────────────────────────
-const MOCK_DOCS = [
-  { id: 1, name: 'attention-is-all-you-need.pdf', status: 'ready', pages: 15, size: '2.4 MB', uploadedAt: '2 hours ago' },
-  { id: 2, name: 'gpt4-technical-report.pdf', status: 'ready', pages: 98, size: '8.1 MB', uploadedAt: '1 day ago' },
-  { id: 3, name: 'rag-survey-2024.pdf', status: 'processing', pages: null, size: '3.2 MB', uploadedAt: 'Just now' },
-];
-
-const MOCK_USER = {
-  name: 'Kunal Paul',
-  email: 'kunal@example.com',
-  avatar: null,
-  initials: 'KP',
-};
-
 const WELCOME_MESSAGES = [
   { id: 0, role: 'assistant', content: 'Hello! I\'m **DocMind**, your AI research assistant. Upload a PDF and ask me anything about it — I\'ll provide answers with exact source citations.', citations: null }
 ];
@@ -45,6 +34,8 @@ export default function Dashboard() {
   const [dragOver, setDragOver] = useState(false);
   const [docToDelete, setDocToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [user, setUser] = useState(null);
+
 
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -52,6 +43,32 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const { documents, loading, uploading, error, upload, remove, refetch } = useDocuments();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await api.get("/auth/me");
+        setUser(response.data);
+      } catch (error) {
+        console.error("failed to fetch user: ", error)
+      }
+    }
+
+    fetchUser();
+  }, [])
+
+  // Helper to compute initials if no picture is available
+  const getinitials = (name, email) => {
+    if (name) {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+
+    if (email) return email.slice(0, 2).toUpperCase()
+
+    return 'U';
+  }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -230,7 +247,7 @@ export default function Dashboard() {
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
         <div className="sidebar-logo">
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
-            <span className="logo-icon">⬡</span>
+            <span className="logo-icon">✦</span>
             {sidebarOpen && <span className="logo-text">DocMind</span>}
           </Link>
           <button
@@ -372,24 +389,44 @@ export default function Dashboard() {
 
         {/* User Profile */}
         <div className="sidebar-user" onClick={() => setUserMenuOpen(o => !o)}>
-          <div className="user-avatar">{MOCK_USER.initials}</div>
+          {user?.picture ? (
+            <img
+              src={user.picture}
+              alt={user.name || 'User'}
+              className="user-avatar"
+              style={{ objectFit: 'cover' }}
+            />
+          ) : (
+            <div className="user-avatar">{getinitials(user?.name, user?.email)}</div>
+          )}
+
           {sidebarOpen && (
             <>
               <div className="user-info">
-                <span className="user-name">{MOCK_USER.name}</span>
-                <span className="user-email">{MOCK_USER.email}</span>
+                <span className="user-name">{user?.name || 'User'}</span>
+                <span className="user-email">{user?.email || ''}</span>
               </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}
+              >
                 <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
               </svg>
             </>
           )}
+
           {userMenuOpen && sidebarOpen && (
             <div className="user-menu">
               <button onClick={handleLogout} className="user-menu-item user-menu-logout">🚪 Sign Out</button>
             </div>
           )}
         </div>
+
       </aside>
 
       {/* ── Main Chat ── */}
@@ -416,7 +453,7 @@ export default function Dashboard() {
               style={{ padding: '7px 16px', fontSize: '13px' }}
               onClick={() => setMessages(WELCOME_MESSAGES)}
             >
-              + New Chat
+              <FiEdit size={15} /> New Chat
             </button>
           </div>
         </div>
@@ -426,7 +463,7 @@ export default function Dashboard() {
           {messages.map(msg => (
             <div key={msg.id} className={`message message-${msg.role} fade-in`}>
               {msg.role === 'assistant' && (
-                <div className="msg-avatar msg-avatar-ai">⬡</div>
+                <div className="msg-avatar msg-avatar-ai">✦</div>
               )}
               <div className="msg-bubble-wrap">
                 <div className={`msg-bubble ${msg.role === 'user' ? 'msg-bubble-user' : 'msg-bubble-ai'}`}>
@@ -460,8 +497,18 @@ export default function Dashboard() {
                 )}
               </div>
               {msg.role === 'user' && (
-                <div className="msg-avatar msg-avatar-user">{MOCK_USER.initials}</div>
+                user?.picture ? (
+                  <img
+                    src={user.picture}
+                    alt="User"
+                    className="msg-avatar msg-avatar-user"
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div className="msg-avatar msg-avatar-user">{getInitials(user?.name, user?.email)}</div>
+                )
               )}
+
             </div>
           ))}
           <div ref={chatEndRef} />

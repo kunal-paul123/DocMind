@@ -61,7 +61,7 @@ def get_query_embeddings(text:str) -> list[float]:
 
 def stream_chat(prompt: str):
     """
-    Send a prompt to Gemini 3.6 Flash and get back a streaming response.
+    Send a prompt to Gemini 3.1 Flash and get back a streaming response.
     Instead of waiting for the full answer, it yields text tokens one by one
     — this is what makes the AI response appear word-by-word on the frontend.
     """

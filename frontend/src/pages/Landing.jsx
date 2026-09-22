@@ -1,160 +1,240 @@
 import { Link } from 'react-router-dom';
 import './Landing.css';
 import { isAuthenticated } from '../utils/auth';
+// import { FaArrowRight } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa6";
 
 const features = [
   {
     icon: '📄',
     title: 'Upload Any PDF',
-    desc: 'Drag & drop your research papers, notes, or any documents.'
+    desc: 'Upload research papers, academic journals, books, or technical documentation.'
   },
   {
     icon: '🧠',
     title: 'AI-Powered RAG',
-    desc: 'Powered by Gemini API with semantic search over your knowledge base.'
+    desc: 'Powered by Gemini API with dense semantic vector retrieval over your private knowledge base.'
   },
   {
     icon: '💬',
     title: 'Chat with Docs',
-    desc: 'Ask questions and get answers with exact source citations.'
+    desc: 'Ask contextual questions and receive synthesis with verified page and section citations.'
   },
   {
     icon: '⚡',
     title: 'Streaming Responses',
-    desc: 'Real-time token streaming for a natural conversational feel.'
+    desc: 'Ultra-low latency SSE token streaming for instantaneous, natural conversation.'
   },
 ];
 
 export default function Landing() {
   return (
-    <div className="landing">
-      {/* Navbar */}
-      <nav className="landing-nav">
-        <div className="landing-nav-inner">
-          <div className="landing-logo">
-            <span className="logo-icon">⬡</span>
-            <span className="logo-text">DocMind</span>
-          </div>
-          <div className="landing-nav-links">
-            {isAuthenticated() ? (
-              <Link to="/dashboard" className="btn btn-primary" style={{ padding: '8px 20px' }}>
-                Go to Dashboard →
-              </Link>) : (<Link to="/login" className="btn btn-outline" style={{ padding: '8px 20px' }}>
-                Sign In
-              </Link>)
-            }
-          </div>
+    <div className="landing-root">
+      {/* ── Background Aura & Radial Concentric Waves ── */}
+      <div className="aura-bg-container" aria-hidden="true">
+        <div className="aura-center-spotlight" />
+        <div className="aura-concentric-circles">
+          <div className="aura-ring ring-1" />
+          <div className="aura-ring ring-2" />
+          <div className="aura-ring ring-3" />
+          <div className="aura-ring ring-4" />
+          <div className="aura-ring ring-5" />
+          <div className="aura-ring ring-6" />
         </div>
-      </nav>
+        <div className="mesh-glow orb-purple" />
+        <div className="mesh-glow orb-blue" />
+        <div className="grid-overlay" />
+      </div>
 
-      {/* Hero */}
-      <section className="hero">
-        <div className="hero-bg-orbs">
-          <div className="orb orb-1" />
-          <div className="orb orb-2" />
-          <div className="orb orb-3" />
-        </div>
-        <div className="hero-content fade-in">
-          <div className="hero-badge">
-            <span className="hero-badge-dot" />
-            Powered by Gemini AI
+      {/* ── Floating Glass Capsule Nav ── */}
+      <header className="nav-header">
+        <nav className="nav-capsule">
+          <div className="nav-logo">
+            <span className="logo-sparkle">✦</span>
+            <span className="logo-title">DocMind</span>
           </div>
-          <h1 className="hero-title">
-            Chat with your
-            <span className="hero-gradient-text"> documents</span>
-            <br />like never before
-          </h1>
-          <p className="hero-subtitle">
-            Upload PDFs, research papers, or notes and get instant AI-powered answers
-            with source citations — all in a private, secure environment.
-          </p>
-          <div className="hero-cta">
-            <Link to={isAuthenticated() ? "/dashboard" : "/login"} className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '15px' }}>
-              {isAuthenticated() ? "Go to Dashboard" : "Get Started Free"}
-              {!isAuthenticated() && (
+
+          <div className="nav-links">
+            <a href="#features" className="nav-item">Features</a>
+            <a href="#pipeline" className="nav-item">Pipeline</a>
+            <a href="#citations" className="nav-item">Citations</a>
+            <a href="#security" className="nav-item">Security</a>
+          </div>
+
+          <div className="nav-action">
+            {isAuthenticated() ? (
+              <Link to="/dashboard" className="btn-glass-white nav-btn">
+                Dashboard
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-              )}
-            </Link>
-            <a href="#features" className="btn btn-outline" style={{ padding: '14px 32px', fontSize: '15px' }}>
-              See How It Works
-            </a>
-          </div>
-          <p className="hero-note">No credit card required · Free tier available</p>
-        </div>
+              </Link>
 
-        {/* Hero Visual */}
-        <div className="hero-visual fade-in">
-          <div className="hero-chat-demo">
-            <div className="demo-header">
-              <div className="demo-dots">
-                <span /><span /><span />
-              </div>
-              <span className="demo-title">research-paper.pdf</span>
+            ) : (
+              <Link to="/login" className="btn-glass-white nav-btn">
+                Sign In
+              </Link>
+            )}
+          </div>
+        </nav>
+      </header>
+
+      {/* ── Hero Section ── */}
+      <section className="hero-section">
+        <div className="hero-container">
+          <div className="hero-content">
+
+            <h1 className="hero-headline">
+              Chat with your
+              <br />
+              <span className="hero-italic-serif">documents</span>
+              <br />
+              like never before.
+            </h1>
+
+            <p className="hero-description">
+              Pushing the boundaries of semantic retrieval, document intelligence,
+              and real-time AI knowledge synthesis with exact source citations.
+            </p>
+
+            <div className="hero-actions">
+              <Link
+                to={isAuthenticated() ? "/dashboard" : "/login"}
+                className="btn-glass-white hero-btn-primary"
+              >
+                <span>{isAuthenticated() ? "Go to Dashboard" : "Get Started Free"}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <a href="#features" className="btn-glass hero-btn-secondary">
+                See How It Works
+              </a>
             </div>
-            <div className="demo-messages">
-              <div className="demo-msg demo-msg-user">
-                What are the key findings of this paper?
+
+          </div>
+
+          {/* Hero Visual Terminal Card */}
+          <div className="hero-visual-wrap">
+            <div className="hero-glass-card">
+              <div className="glass-card-header">
+                <div className="mac-dots">
+                  <span className="dot dot-red" />
+                  <span className="dot dot-yellow" />
+                  <span className="dot dot-green" />
+                </div>
+                <div className="card-doc-pill">
+                  <span className="doc-pill-icon">📄</span>
+                  <span>research-paper.pdf</span>
+                </div>
               </div>
-              <div className="demo-msg demo-msg-ai">
-                <div className="demo-msg-icon">⬡</div>
-                <div>
-                  <p>The paper identifies <strong>3 key findings</strong>:</p>
-                  <ol>
-                    <li>Transformer models outperform RNNs by 34%</li>
-                    <li>Attention mechanisms reduce training time</li>
-                    <li>Zero-shot learning improves with scale</li>
-                  </ol>
-                  <div className="demo-citation">
-                    📄 Page 4, Section 3.2
+
+              <div className="glass-card-body">
+                <div className="demo-chat-row demo-user-row">
+                  <div className="demo-user-bubble">
+                    What are the key findings of this paper?
+                  </div>
+                </div>
+
+                <div className="demo-chat-row demo-ai-row">
+                  <div className="demo-ai-avatar">✦</div>
+                  <div className="demo-ai-bubble">
+                    <p className="ai-lead">The paper demonstrates <strong>3 transformative insights</strong>:</p>
+                    <ul className="ai-points">
+                      <li>
+                        <span className="point-bullet">1</span>
+                        <span>Transformer models outperform traditional RNNs by <strong>34%</strong> on complex benchmarks.</span>
+                      </li>
+                      <li>
+                        <span className="point-bullet">2</span>
+                        <span>Self-attention mechanisms drastically reduce training convergence time.</span>
+                      </li>
+                      <li>
+                        <span className="point-bullet">3</span>
+                        <span>Zero-shot generalizability scales predictably with parameter depth.</span>
+                      </li>
+                    </ul>
+                    <div className="demo-citation-chip">
+                      <span className="chip-icon">📎</span>
+                      <span>Page 4 · Section 3.2 — Attention Mechanics</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="demo-input">
-              <span>Ask anything about your document...</span>
-              <button className="demo-send">↑</button>
+
+              <div className="glass-card-footer">
+                <span className="demo-footer-text">Ask anything about your document...</span>
+                <button className="demo-footer-btn" aria-label="Send query">↑</button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* ── Features Section with Cool Card Animations ── */}
       <section className="features-section" id="features">
-        <div className="features-inner">
-          <h2 className="section-title">Everything you need to <span className="hero-gradient-text">research smarter</span></h2>
-          <p className="section-subtitle">A complete AI research assistant in your browser</p>
+        <div className="features-container">
+          <div className="section-header">
+            <span className="section-pill">CAPABILITIES</span>
+            <h2 className="section-title">
+              Everything you need to <span className="hero-italic-serif">research smarter</span>
+            </h2>
+            <p className="section-subtitle">
+              A comprehensive AI document intelligence engine running directly in your browser.
+            </p>
+          </div>
+
           <div className="features-grid">
             {features.map((f, i) => (
-              <div className="feature-card" key={i}>
-                <div className="feature-icon">{f.icon}</div>
-                <h3 className="feature-title">{f.title}</h3>
-                <p className="feature-desc">{f.desc}</p>
+              <div className="animated-feature-card" key={i}>
+                <div className="card-glow-reflection" />
+                <div className="card-inner">
+                  <div className="feature-icon-glass">{f.icon}</div>
+                  <h3 className="feature-title">{f.title}</h3>
+                  <p className="feature-desc">{f.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Banner */}
-      <section className="cta-banner">
-        <div className="cta-inner">
-          <h2>Ready to unlock your documents?</h2>
-          <p>Join researchers, students, and professionals using DocMind.</p>
-          <Link to={isAuthenticated() ? "/dashboard" : "/login"} className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '15px' }}>
-            {isAuthenticated() ? "Go to Dashboard ->" : "Start for Free"}
-          </Link>
+      {/* ── CTA Banner with Aura Waves ── */}
+      <section className="cta-section" id="pipeline">
+        <div className="cta-container">
+          <div className="cta-glass-card">
+            <div className="cta-aura-glow" />
+            <span className="cta-badge">GET STARTED IN SECONDS</span>
+            <h2 className="cta-title">Ready to unlock your documents?</h2>
+            <p className="cta-desc">
+              Join researchers, analysts, students, and engineers transforming raw PDFs into instant answers.
+            </p>
+            <div className="cta-actions">
+              <Link
+                to={isAuthenticated() ? "/dashboard" : "/login"}
+                className="btn-glass-white cta-btn"
+              >
+                <span>{isAuthenticated() ? "Go to Dashboard" : "Start For Free"}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <footer className="landing-footer">
-        <div className="landing-logo">
-          <span className="logo-icon">⬡</span>
-          <span className="logo-text">DocMind</span>
+        <div className="footer-inner">
+          <div className="footer-logo">
+            <span className="logo-sparkle">✦</span>
+            <span className="logo-title">DocMind</span>
+          </div>
+          <p className="footer-copy">
+            © {new Date().getFullYear()} DocMind
+          </p>
         </div>
-        <p className="footer-copy">© 2026 DocMind. Built with Gemini AI.</p>
       </footer>
     </div>
   );

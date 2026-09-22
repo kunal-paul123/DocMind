@@ -15,7 +15,7 @@ export function useDocuments() {
             const data = await getDocuments();
             setDocuments(data);
         } catch (error) {
-            setError(error.response?.data?.detail || "Failed to fetch documents");
+            setError(error.response?.data?.detail);
         } finally {
             setLoading(false);
         }

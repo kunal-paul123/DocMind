@@ -16,7 +16,7 @@ export default function Register() {
       </div>
 
       <Link to="/" className="auth-logo">
-        <span className="logo-icon">⬡</span>
+        <span className="logo-icon">✦</span>
         <span className="logo-text">DocMind</span>
       </Link>
 
