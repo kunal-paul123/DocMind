@@ -7,10 +7,6 @@ services:
     restart: always
     ports:
       - "8000:8000"
-    environment:
-      # Direct connection to your Neon cloud database
-      - DATABASE_URL=postgresql://neondb_owner:npg_bkafrX0QiS5P@ep-delicate-hill-awtxo6y7-pooler.c-12.us-east-1.aws.neon.tech/neondb?sslmode=require
-      - PORT=8000
     env_file:
       - ./backend/.env
     volumes:
