@@ -10,14 +10,20 @@ class Settings(BaseSettings):
     # google auth
     GOOGLE_CLIENT_ID:str
     GOOGLE_CLIENT_SECRET:str
-    GOOGLE_REDIRECT_URI:str = "http://localhost:8000/auth/google/callback"
+    GOOGLE_REDIRECT_URI:str
+
+    GOOGLE_AUTH_URL:str
+    GOOGLE_TOKEN_URL:str
+    GOOGLE_USERINFO_URL:str
 
     # frontend url
-    FRONTEND_URL:str = "http://localhost:5173"
-    
+    LOCALHOST_FRONTEND_URL:str
+    FRONTEND_URL:str
 
     model_config = SettingsConfigDict(
         env_file = ".env"
     )
 
 settings = Settings()
+
+

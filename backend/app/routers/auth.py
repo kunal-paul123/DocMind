@@ -7,13 +7,14 @@ from app.config import settings
 from app.models.user import User
 from app.schemas.user import TokenResponse, UserOut
 from app.core.security import create_access_token, get_current_user
+from app.config import settings
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
+GOOGLE_AUTH_URL = settings.GOOGLE_AUTH_URL
+GOOGLE_TOKEN_URL = settings.GOOGLE_TOKEN_URL
+GOOGLE_USERINFO_URL = settings.GOOGLE_USERINFO_URL
 
 # Step 1 — Redirect user to Google login page
 @router.get("/google")

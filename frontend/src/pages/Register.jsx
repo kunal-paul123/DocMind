@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import './Auth.css';
 
-const GOOGLE_AUTH_URL = 'http://localhost:8000/auth/google';
+const GOOGLE_AUTH_URL = `${import.meta.env.VITE_API_URL}/auth/google`;
 
 export default function Register() {
   const handleGoogleSignup = () => {
