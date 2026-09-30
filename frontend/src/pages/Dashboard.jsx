@@ -129,17 +129,14 @@ export default function Dashboard() {
         }),
       });
 
-      console.log("response: ", response);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.log("errorData: ", errorData);
         throw new Error(errorData.detail || `Server responded with ${response.status}`);
       }
 
       // Read Server-Sent Events (SSE) stream from the response body
       const reader = response.body.getReader();
-      console.log("reader:", reader);
       const decoder = new TextDecoder("utf-8");
       let buffer = "";
 
@@ -149,23 +146,19 @@ export default function Dashboard() {
 
         // decode new chunk and add to buffer
         buffer += decoder.decode(value, { stream: true });
-        console.log("buffer: ", buffer);
 
         const lines = buffer.split('\n');
         buffer = lines.pop() // Keep uncompleted line in buffer
 
         for (const line of lines) {
           const trimmed = line.trim();
-          console.log("trimmed: ", trimmed);
           if (!trimmed.startsWith('data: ')) continue;
 
           const jsonStr = trimmed.replace(/^data:\s*/, '');
-          console.log("jsonStr: ", jsonStr);
           if (!jsonStr) continue;
 
           try {
             const data = JSON.parse(jsonStr);
-            console.log("data: ", data);
 
 
             if (data.type == 'token') {
