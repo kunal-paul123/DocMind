@@ -14,7 +14,6 @@ def get_embeddings(text: str) -> list[float]:
     Similar texts will have vectors close to each other in space.
     Used for: embedding document chunks
     """
-    print(text)
 
     result = client.models.embed_content(
         model="gemini-embedding-001",
@@ -22,7 +21,6 @@ def get_embeddings(text: str) -> list[float]:
         config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
     )
 
-    print(result)
 
     if not result.embeddings:
         raise RuntimeError(f"Gemini embedding API returned no embeddings. Full result: {result}")
@@ -40,15 +38,12 @@ def get_query_embeddings(text:str) -> list[float]:
     to improve retrieval accuracy — always use this for user questions.
     """
 
-    print(text)
-
     result = client.models.embed_content(
         model="gemini-embedding-001",
         contents=text,
         config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
     )
 
-    print(result)
 
     if not result.embeddings:
         raise RuntimeError(f"Gemini embedding API returned no embeddings. Full result: {result}")
@@ -69,8 +64,6 @@ def stream_chat(prompt: str):
         model="gemini-3.1-flash-lite",
         contents=prompt,
     )
-
-    print(response)
 
     for chunk in response:
         if chunk.text:

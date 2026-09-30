@@ -77,7 +77,6 @@ def process_document(doc_id: str, file_path: str):
 
     except Exception as e:
         # If anything goes wrong, mark as FAILED
-        print(f"[document_service] Error processing {doc_id}: {e}")
         doc = db.query(Document).filter(Document.id == doc_id).first()
         if doc:
             doc.status = DocumentStatus.FAILED
