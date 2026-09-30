@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     GOOGLE_USERINFO_URL:str
 
     # frontend url
-    LOCALHOST_FRONTEND_URL:str
     FRONTEND_URL:str
 
     model_config = SettingsConfigDict(
